@@ -1,3 +1,4 @@
+import re
 
 """
 Judge the passwords' stength by methods from esay to hard.
@@ -18,7 +19,11 @@ class Judge:
         The password must contain at least 1 lower-case letter, 1 upper-case letter and 1 specific symbol.
         : return: the strenth of password.
         """
+        password = self.password
 
+        specific_symbol = r".*[\(\)`!@#\$%^&\*_-+=|{}\[\]:;'<>,\.\?/].*"
+        number = r'.*[0-9].*'
+        lower_case_letter = r'.*[a-z].*'
         return NotImplemented
     
     def most_used_filter(self):
