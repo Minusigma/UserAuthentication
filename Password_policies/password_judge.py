@@ -1,4 +1,5 @@
 import re
+import psycopg2
 
 """
 Judge the passwords' stength by methods from esay to hard.
