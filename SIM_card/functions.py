@@ -29,7 +29,7 @@ def create_device(conn):
     return device_num
 
 def device_add(db_conn, d_num):
-    sql = """INSERT INTO device_info (device_num, phone_num) VALUES (%d, %d)"""
+    sql = """INSERT INTO device_info (device_num, phone_num) VALUES (%d, %d);"""
     param = (d_num , None)
     cur = db_conn.cursor()
     cur.execute(sql,param)
@@ -49,4 +49,10 @@ def tcp_conn():
         information = (str)(e)
     return socket_client,information
 
-def get_phone_num(db_conn, )
+def get_phone_num(db_conn, name, pin, device):
+    cur = db_conn.cursor()
+    sql1 = """SELECT number FROM phone_number WHERE name is null;"""
+    cur.execute(sql1)
+    db_conn.commit()
+    phone_list = cur.fetchall()
+    return NotImplemented
