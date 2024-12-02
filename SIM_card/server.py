@@ -26,7 +26,7 @@ def main_loop(socket_conn, db_conn, client_address, curr_device, curr_num):
             if cmd[0] == 'createdevice':
                 curr_device, feedback_data = device_add(db_conn, cmd[1])
             elif cmd[0] == 'getphonenum':
-                curr_num, feedback_data = get_phone_num(db_conn, cmd[1], cmd[2], curr_device)
+                curr_num, feedback_data = reg_phone_num(db_conn, cmd[1], cmd[2], curr_device)
 
     
 

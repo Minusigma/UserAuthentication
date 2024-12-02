@@ -23,14 +23,7 @@ def conn_db():
                             password=PASSWORD, 
                             host=HOST, 
                             port=PORT)
-    
-    # cur = conn.cursor()
-    # cur.execute('''CREATE TABLE device_info(
-    #            DeviceNum INT PRIMARY KEY NOT NULL,
-    #            PhoneNum INT NOT NULL)''')
-    # conn.commit()
     print("Connect Succeed.")
-    # conn.close()
     return conn
 
 def close_db(conn):
@@ -42,6 +35,28 @@ def execute_sql(conn, cmd):
     cur.execute(cmd)
     print("Executed succeed.")
 
+
+def create_table(conn):
+    sql = """CREATE TABLE IF NOT EXISTS device_info(
+            DeviceNum INT PRIMARY KEY NOT NULL,
+            PhoneNum INT UNIQUE);
+            CREATE TABLE IF NOT EXISTS phone_number(
+            PhoneNum INT PRIMARY KEY NOT NULL,
+            Name VARCHAR(20),
+            PIN INT);
+            CREATE TABLE IF NOT EXISTS user_info(
+            UserID SERIAL PRIMARY KEY NOT NULL,
+            Name VARCHAR(20) NOT NULL,
+            PhoneNum INT UNIQUE);
+            CREATE TABLE IF NOT EXISTS website_info(
+            UserName VARCHAR(20) PRIMARY KEY NOT NULL,
+            Password VARCHAR(20) NOT NULL,
+            PhoneNum INT);
+            CREATE TABLE IF NOT EXISTS call_record(
+            Caller INT NOT NULL,
+            Callee INT NOT NULL,
+            Time TIMESTAMP NOT NULL);"""
+    execute_sql(conn, sql)
 
 def create_device(conn):
     device_num = random.randint(100, 1000)
@@ -70,10 +85,43 @@ def tcp_conn():
         information = (str)(e)
     return socket_client,information
 
-def get_phone_num(db_conn, name, pin, device):
+def reg_phone_num(db_conn, name, pin, device):
     cur = db_conn.cursor()
     sql1 = """SELECT number FROM phone_number WHERE name is null;"""
     cur.execute(sql1)
     db_conn.commit()
     phone_list = cur.fetchall()
-    return NotImplemented
+    phone_num = phone_list[random.randint(0, len(phone_list) - 1)][0]
+    sql2 = """UPDATE phone_number SET name = %s, pin = %d WHERE number = %d;"""
+    param = (name, pin, phone_num)
+    cur.execute(sql2, param)
+    db_conn.commit()
+    sql3 = """UPDATE device_info SET phone_num = %d WHERE device_num = %d;"""
+    param = (phone_num, device)
+    cur.execute(sql3, param)
+    db_conn.commit()
+    return phone_num, 'Register succeed.'
+
+def make_call(db_conn, caller, callee):
+    cur = db_conn.cursor()
+    sql = """INSERT INTO call_record (caller, callee, time) VALUES (%d, %d, %s);"""
+    param = (caller, callee, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    cur.execute(sql, param)
+    db_conn.commit()
+    return 'Call succeed.'
+
+def delete_phone_num(db_conn, phone_num):
+    cur = db_conn.cursor()
+    sql = """UPDATE phone_number SET name = NULL, pin = NULL WHERE number = %d;"""
+    param = (phone_num)
+    cur.execute(sql, param)
+    db_conn.commit()
+    sql2 = """UPDATE device_info SET phone_num = NULL WHERE phone_num = %d;"""
+    param = (phone_num)
+    cur.execute(sql2, param)
+    db_conn.commit()
+    return 'Delete succeed.'
+
+def register_user(db_conn, name, password, phone_num):
+    cur = db_conn.cursor()
+    sql = """SELECT User"""
