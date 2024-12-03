@@ -49,7 +49,8 @@ def create_table(conn):
             Name VARCHAR(20) NOT NULL,
             PhoneNum INT UNIQUE);
             CREATE TABLE IF NOT EXISTS website_info(
-            UserName VARCHAR(20) PRIMARY KEY NOT NULL,
+            ID SERIAL PRIMARY KEY NOT NULL,
+            UserName VARCHAR(20) NOT NULL,
             Password VARCHAR(20) NOT NULL,
             PhoneNum INT);
             CREATE TABLE IF NOT EXISTS call_record(
@@ -124,4 +125,86 @@ def delete_phone_num(db_conn, phone_num):
 
 def register_user(db_conn, name, password, phone_num):
     cur = db_conn.cursor()
-    sql = """SELECT User"""
+    sql = """SELECT * FROM website_info WHERE UserName = %s;"""
+    param = (name)
+    cur.execute(sql, param)
+    db_conn.commit()
+    user_name = cur.fetchall()
+    if len(user_name) != 0:
+        return 'User already exists.'
+    sql1 = """SELECT * FROM phone_number WHERE number = %d;"""
+    param = (phone_num)
+    cur.execute(sql1, param)
+    db_conn.commit()
+    phone_num = cur.fetchall()
+    if len(phone_num) == 0:
+        return 'Phone number does not exist.'
+    sql2 = """INSERT INTO website_info (UserName, Password, PhoneNum) VALUES (%s, %s, %d);"""
+    param = (name, password, phone_num)
+    cur.execute(sql2, param)
+    db_conn.commit()
+    return 'Register succeed.'
+
+def login_by_name_password(db_conn, name, password):
+    cur = db_conn.cursor()
+    sql = """SELECT * FROM website_info WHERE UserName = %s;"""
+    param = (name)
+    cur.execute(sql, param)
+    db_conn.commit()
+    list = cur.fetchall()
+    if len(list) == 0:
+        return 'No such user.'
+    if list[0][2] != password:
+        return 'Wrong password.'
+    return 'Login succeed.'
+
+
+
+def login_by_phone_password(db_conn, phone_num, password):
+    cur = db_conn.cursor()
+    sql = """SELECT * FROM website_info WHERE PhoneNum = %d;"""
+    param = (phone_num)
+    cur.execute(sql, param)
+    db_conn.commit()
+    list = cur.fetchall()
+    if len(list) == 0:
+        return 'No such user.'
+    if list[0][2] != password:
+        return 'Wrong password.'
+    return 'Login succeed.'
+
+def login_by_phone_pin(db_conn, tcp_conns, phone_num):
+    cur = db_conn.cursor()
+    sql = """SELECT * FROM website_info WHERE PhoneNum = %d;"""
+    param = (phone_num)
+    cur.execute(sql, param)
+    db_conn.commit()
+    list = cur.fetchall()
+    if len(list) == 0:
+        return None, 'No such user.'
+    name = list[0][0]
+    pin = random.randint(1000, 9999)
+    sql2 = """SELECT DeviceNum FROM device_info WHERE phone_num = %d;"""
+    param = (phone_num)
+    cur.execute(sql2, param)
+    db_conn.commit()
+    device_num = cur.fetchall()
+    tcp_conn = tcp_conns[device_num[0][0]]
+    tcp_conn.send(f'pin {pin}')
+    feedback = tcp_conn.recv(2048)
+    if feedback == pin:
+        return name,'Login succeed.'
+    return None,'Wrong PIN.'
+
+def logout():
+    return None, 'Logout succeed'
+
+def change_device(db_conn, tcp_conn, device_num, phone_num, password):
+    cur = db_conn.cursor()
+    sql = """SELECT * FROM user_info WHERE phone_num = %d;"""
+    param = (phone_num)
+    cur.execute(sql, param)
+    db_conn.commit()
+    list = cur.fetchall()
+    if len(list) == 0:
+        return 'No such user.'
