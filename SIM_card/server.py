@@ -8,9 +8,20 @@ cmd_device = [
     '?',
     'help',
     'getphonenum {name} {PIN}',
+    'changedevice {phone_num} {password}',
+    'currentdevice',
     'exit'
 ]
 
+cmd_phone = [
+    '?',
+    'help',
+    'register {name} {passward} {phone_num}',
+    'loginnamepwd {name} {passward}',
+    'loginphonepwd {phone_num} {passward}',
+    'loginphonepin {phone_num} {pin}',
+    'exit'
+]
 # def main_loop(socket_conn, db_conn, client_address, curr_device, curr_num, tcp_conns):
 #     receive_data = socket_conn.recv(2048).decode().split('\r\n')[0]
 
@@ -65,6 +76,8 @@ class Server(socketserver.BaseRequestHandler):
                         feedback_data = 'disconnected'
                     elif cmd[0] == 'getphonenum':
                         curr_num, feedback_data = reg_phone_num(db, cmd[1], cmd[2], curr_device)
+                    elif cmd[0] == 'changedevice':
+                        feedback_data = change_device(db, curr_device, cmd[1], cmd[2])
                 if not connect:
                     print(f"{addr} closed connection.")
                     break
