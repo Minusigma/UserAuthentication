@@ -23,6 +23,7 @@ def conn_db():
                             password=PASSWORD, 
                             host=HOST, 
                             port=PORT)
+    create_table(conn)
     print("Connect Succeed.")
     return conn
 
@@ -199,7 +200,7 @@ def login_by_phone_pin(db_conn, tcp_conns, phone_num):
 def logout():
     return None, 'Logout succeed'
 
-def change_device(db_conn, tcp_conn, device_num, phone_num, password):
+def change_device(db_conn, tcp_conn, tcp_conns, device_num, phone_num, password):
     cur = db_conn.cursor()
     sql = """SELECT * FROM user_info WHERE phone_num = %d;"""
     param = (phone_num)
@@ -208,3 +209,35 @@ def change_device(db_conn, tcp_conn, device_num, phone_num, password):
     list = cur.fetchall()
     if len(list) == 0:
         return 'No such user.'
+    origin_device = list[0][0]
+    if origin_device == device_num:
+        return 'Already in this device.'
+    origin_tcp = tcp_conns[origin_device]
+    
+    if password == list[0][2]:
+        origin_tcp.send(f'logout {phone_num}')
+        sql2 = """UPDATE device_info SET phone_num = NULL WHERE device_num = %d;
+        UPDATE device_info SET phone_num = %d WHERE device_num = %d;"""
+        param = (origin_device, phone_num, device_num)
+        cur.execute(sql2, param)
+        db_conn.commit()
+        return 'Change device succeed.'
+    else:
+        tcp_conn.send(f'Please print the last two calls')
+        feedback = tcp_conn.recv(2048).split(' ')
+        sql3 = """SELECT * FROM call_record WHERE caller = %d ORDER BY time DESC LIMIT 2;"""
+        param = (phone_num)
+        cur.execute(sql3, param)
+        db_conn.commit()
+        call_record = cur.fetchall()
+        if len(call_record) == 2:
+            if (call_record[0][1] == feedback[0] and call_record[1][1] == feedback[1]) or (call_record[0][1] == feedback[1] and call_record[1][1] == feedback[0]):
+                sql4 = """UPDATE device_info SET phone_num = NULL WHERE device_num = %d;
+                UPDATE device_info SET phone_num = %d WHERE device_num = %d;"""
+                param = (origin_device, phone_num, device_num)
+                cur.execute(sql4, param)
+                db_conn.commit()
+                return 'Change device succeed.'
+    return 'Change device failed.'
+
+

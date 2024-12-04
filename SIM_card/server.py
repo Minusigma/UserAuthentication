@@ -11,41 +11,60 @@ cmd_device = [
     'exit'
 ]
 
-db = None
+# def main_loop(socket_conn, db_conn, client_address, curr_device, curr_num, tcp_conns):
+#     receive_data = socket_conn.recv(2048).decode().split('\r\n')[0]
 
-def main_loop(socket_conn, db_conn, client_address, curr_device, curr_num):
-    receive_data = socket_conn.recv(2048).decode().split('\r\n')[0]
-
-    if not curr_num:
-        if receive_data == '?' or receive_data == 'help' or receive_data == 'ls':
-            feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_device)
-        elif receive_data == 'exit':
-            feedback_data = 'disconnected'
-        else:
-            cmd = receive_data.split(' ')
-            if cmd[0] == 'createdevice':
-                curr_device, feedback_data = device_add(db_conn, cmd[1])
-            elif cmd[0] == 'getphonenum':
-                curr_num, feedback_data = reg_phone_num(db_conn, cmd[1], cmd[2], curr_device)
+#     if not curr_num:
+#         if receive_data == '?' or receive_data == 'help' or receive_data == 'ls':
+#             feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_device)
+#         elif receive_data == 'exit':
+#             feedback_data = 'disconnected'
+#         else:
+#             cmd = receive_data.split(' ')
+#             if cmd[0] == 'createdevice':
+#                 curr_device, feedback_data = device_add(db_conn, cmd[1])
+#                 tcp_conns[curr_device] = socket_conn
+#             elif cmd[0] == 'getphonenum':
+#                 curr_num, feedback_data = reg_phone_num(db_conn, cmd[1], cmd[2], curr_device)
 
     
 
-    socket_conn.sendall(feedback_data.encode('UTF-8'))
-    if feedback_data == 'disconnected':
-        return False, None, None
-    return True, curr_device, curr_num
+#     socket_conn.sendall(feedback_data.encode('UTF-8'))
+#     if feedback_data == 'disconnected':
+#         return False, None, None
+#     return True, curr_device, curr_num
 
 
 class Server(socketserver.BaseRequestHandler):
+    def __init__(self):
+        self.tcp_conns = {}
+        self.db = conn_db()
 
     def handle(self):
         curr_device = None
         curr_num = None
+        connect = True
         while True:
             conn = self.request
             addr = self.client_address
             try:
-                connect, curr_device, curr_num = main_loop(conn, db, addr, curr_device, curr_num)
+                # connect, curr_device, curr_num = main_loop(conn, db, addr, curr_device, curr_num, self.tcp_conns)
+                receive_data = conn.recv(2048).decode().split('\r\n')[0]
+                
+                if not curr_device:
+                    cmd = receive_data.split(' ')
+                    if cmd[0] == 'createdevice':
+                        curr_device, feedback_data = device_add(db, cmd[1])
+                        self.tcp_conns[curr_device] = conn
+                    else:
+                        feedback_data = 'Please create a device first.'
+                elif not curr_num:
+                    if receive_data == 'help' or receive_data == '?':
+                        feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_device)
+                    elif receive_data == 'exit':
+                        feedback_data = 'disconnected'
+                    elif cmd[0] == 'getphonenum':
+                        curr_num, feedback_data = reg_phone_num(db, cmd[1], cmd[2], curr_device)
                 if not connect:
                     print(f"{addr} closed connection.")
                     break
