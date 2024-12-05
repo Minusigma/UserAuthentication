@@ -20,6 +20,7 @@ cmd_phone = [
     'loginnamepwd {name} {passward}',
     'loginphonepwd {phone_num} {passward}',
     'loginphonepin {phone_num} {pin}',
+    'currentinfo',
     'exit'
 ]
 # def main_loop(socket_conn, db_conn, client_address, curr_device, curr_num, tcp_conns):
@@ -74,10 +75,34 @@ class Server(socketserver.BaseRequestHandler):
                         feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_device)
                     elif receive_data == 'exit':
                         feedback_data = 'disconnected'
-                    elif cmd[0] == 'getphonenum':
-                        curr_num, feedback_data = reg_phone_num(db, cmd[1], cmd[2], curr_device)
-                    elif cmd[0] == 'changedevice':
-                        feedback_data = change_device(db, curr_device, cmd[1], cmd[2])
+                        connect = False
+                    elif receive_data == 'currentdevice':
+                        feedback_data = f"Current device: {curr_device}"
+                    else:
+                        cmd = receive_data.split(' ')
+                        if cmd[0] == 'getphonenum':
+                            curr_num, feedback_data = reg_phone_num(db, cmd[1], cmd[2], curr_device)
+                        elif cmd[0] == 'changedevice':
+                            feedback_data = change_device(db, curr_device, cmd[1], cmd[2])
+                else:
+                    if receive_data == 'help' or receive_data == '?':
+                        feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_phone)
+                    elif receive_data == 'exit':
+                        feedback_data = 'disconnected'
+                        connect = False
+                    elif receive_data == 'currentinfo':
+                        feedback_data = f"Current device / number: {curr_device} / {curr_num}"
+                    else:
+                        cmd = receive_data.split(' ')
+                        if cmd[0] == 'register':
+                            feedback_data = register_user(db, cmd[1], cmd[2], cmd[3])
+                        elif cmd[0] == 'loginnamepwd':
+                            feedback_data = login_by_name_password(db, cmd[1], cmd[2])
+                        elif cmd[0] == 'loginphonepwd':
+                            feedback_data = login_by_phone_password(db, cmd[1], cmd[2])
+                        elif cmd[0] == 'loginphonepin':
+                            feedback_data = login_by_phone_pin(db, self.tcp_conns, cmd[1])
+                conn.sendall(feedback_data.encode('UTF-8'))
                 if not connect:
                     print(f"{addr} closed connection.")
                     break
