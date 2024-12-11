@@ -6,15 +6,21 @@ import zxcvbn
 Judge the passwords' stength by methods from esay to hard.
 """
 class Judge:
-    def __init__(self,password = '') -> None:
-        self.password = password
+    def __init__(self, most_used_passwords = []) -> None:
+        self.password = ''
+        self.most_used_passwords = most_used_passwords
 
-    def judge(self) -> int:
+    def judge(self, password = '') -> int:
         """
         Handle methods to judge the password.
         : return: the strenth number of password, 0 if the password is invalid under this method, 5 if the password is strong enough.
         """
-        s_level = self._3_class_8()
+        self.password = password
+        s_level = 0
+        # s_level = self._3_class_8()
+        print(self.most_used_filter())
+        if self.most_used_filter():
+            s_level = self.zxcvbn_meter()
         self.print(s_level)
         return s_level
     
@@ -73,9 +79,8 @@ class Judge:
         It will search for the database of 100k-most-used-password-NCSC to avoid the most common passwords.
         : return: True if not find in database.
         """
-        with open('100k-most-used-passwords-NCSC.txt', 'r') as file:
-            most_used_passwords = file.read().splitlines()
-        if self.password in most_used_passwords:
+        
+        if self.password in self.most_used_passwords:
             return False
         return True
 
@@ -84,8 +89,8 @@ class Judge:
         Use the zxcvbn to estimate the strenth of password. The trial will dispaly the strenth of the password.
         : return: the strenth of password.
         """
-        strenth = zxcvbn.password_strength(self.password)
-        return NotImplemented
+        strenth = zxcvbn.zxcvbn(self.password)
+        return strenth['score']
     
     def display(self):
         """
@@ -95,27 +100,43 @@ class Judge:
         return
     
     def print(self, secure_level):
+        # if secure_level == 0:
+        #     print('[-----] No password or password is invalid')
+        # elif secure_level == 1:
+        #     print('[=----] Too Weak')
+        # elif secure_level == 2:
+        #     print('[==---] Weak')
+        # elif secure_level == 3:
+        #     print('[===--] Normal')
+        # elif secure_level == 4:
+        #     print('[====-] Good')
+        # elif secure_level == 5:
+        #     print('[=====] Perfect')
+        # else:
+        #     print('invalid secure_level')
         if secure_level == 0:
-            print('[-----] No password or password is invalid')
+            print('[----] Too Weak')
         elif secure_level == 1:
-            print('[=----] Too Weak')
+            print('[=---] Weak')
         elif secure_level == 2:
-            print('[==---] Weak')
+            print('[==--] Normal')
         elif secure_level == 3:
-            print('[===--] Normal')
+            print('[===-] Good')
         elif secure_level == 4:
-            print('[====-] Good')
-        elif secure_level == 5:
-            print('[=====] Perfect')
+            print('[====] Perfect')
         else:
             print('invalid secure_level')
 
 def main():
+    with open('./100k-most-used-passwords-NCSC.txt', 'r', encoding='utf-8') as file:
+        most_used_passwords = file.read().splitlines()
+    model = Judge(most_used_passwords = most_used_passwords)
     while True:
         word = input("Please write your password (type 'quit' to leave): ")
         if word == 'quit':
             break
-        Judge(word).judge()
+        
+        model.judge(password = word)
 
 
 if __name__ == "__main__":
