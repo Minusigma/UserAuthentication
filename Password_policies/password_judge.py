@@ -1,5 +1,6 @@
 import re
 import psycopg2
+import zxcvbn
 
 """
 Judge the passwords' stength by methods from esay to hard.
@@ -72,14 +73,18 @@ class Judge:
         It will search for the database of 100k-most-used-password-NCSC to avoid the most common passwords.
         : return: True if not find in database.
         """
+        with open('100k-most-used-passwords-NCSC.txt', 'r') as file:
+            most_used_passwords = file.read().splitlines()
+        if self.password in most_used_passwords:
+            return False
+        return True
 
-        return NotImplemented
-
-    def PGS(self):
+    def zxcvbn_meter(self):
         """
-        Use the Password Guessability Service (PGS) to guess the password. The trial will dispaly the strenth of the password.
+        Use the zxcvbn to estimate the strenth of password. The trial will dispaly the strenth of the password.
         : return: the strenth of password.
         """
+        strenth = zxcvbn.password_strength(self.password)
         return NotImplemented
     
     def display(self):
