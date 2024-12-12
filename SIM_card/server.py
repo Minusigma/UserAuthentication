@@ -21,6 +21,7 @@ cmd_phone = [
     'loginphonepwd {phone_num} {passward}',
     'loginphonepin {phone_num} {pin}',
     'currentinfo',
+    'call {phone_num}',
     'exit'
 ]
 # def main_loop(socket_conn, db_conn, client_address, curr_device, curr_num, tcp_conns):
@@ -84,7 +85,7 @@ class Server(socketserver.BaseRequestHandler):
                         if cmd[0] == 'getphonenum':
                             curr_num, feedback_data = reg_phone_num(db, cmd[1], cmd[2], curr_device)
                         elif cmd[0] == 'changedevice':
-                            feedback_data = change_device(db, conn, curr_device, cmd[1], cmd[2])
+                            curr_num,feedback_data = change_device(db, conn, curr_device, cmd[1], cmd[2], curr_num)
                 else:
                     if receive_data == 'help' or receive_data == '?':
                         feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_phone)
@@ -103,6 +104,8 @@ class Server(socketserver.BaseRequestHandler):
                             feedback_data = login_by_phone_password(db, cmd[1], cmd[2])
                         elif cmd[0] == 'loginphonepin':
                             feedback_data = login_by_phone_pin(db, self.tcp_conns, cmd[1])
+                        elif cmd[0] == 'call':
+                            feedback_data = make_call(db,curr_num,cmd[1])
                 conn.sendall(feedback_data.encode('UTF-8'))
                 if not connect:
                     print(f"{addr} closed connection.")

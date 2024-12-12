@@ -39,27 +39,31 @@ def execute_sql(conn, cmd):
 
 
 def create_table(conn):
-    sql = """CREATE TABLE IF NOT EXISTS device_info(
+    sql1 = """CREATE TABLE IF NOT EXISTS device_info(
             DeviceNum INT PRIMARY KEY NOT NULL,
-            PhoneNum INT);
-            CREATE TABLE IF NOT EXISTS phone_number(
+            PhoneNum INT);"""
+    sql2 = """CREATE TABLE IF NOT EXISTS phone_number(
             PhoneNum INT PRIMARY KEY NOT NULL,
             Name VARCHAR(20),
-            PIN INT);
-            CREATE TABLE IF NOT EXISTS user_info(
+            PIN INT);"""
+    sql3 = """CREATE TABLE IF NOT EXISTS user_info(
             UserID SERIAL PRIMARY KEY NOT NULL,
             Name VARCHAR(20) NOT NULL,
-            PhoneNum INT UNIQUE);
-            CREATE TABLE IF NOT EXISTS website_info(
+            PhoneNum INT UNIQUE);"""
+    sql4 = """CREATE TABLE IF NOT EXISTS website_info(
             ID SERIAL PRIMARY KEY NOT NULL,
             UserName VARCHAR(20) NOT NULL,
             Password VARCHAR(20) NOT NULL,
-            PhoneNum INT);
-            CREATE TABLE IF NOT EXISTS call_record(
+            PhoneNum INT);"""
+    sql5 = """CREATE TABLE IF NOT EXISTS call_record(
             Caller INT NOT NULL,
             Callee INT NOT NULL,
             Time TIMESTAMP NOT NULL);"""
-    execute_sql(conn, sql)
+    execute_sql(conn, sql1)
+    execute_sql(conn, sql2)
+    execute_sql(conn, sql3)
+    execute_sql(conn, sql4)
+    execute_sql(conn, sql5)
 
 def create_device(conn):
     device_num = random.randint(100, 1000)
@@ -129,18 +133,18 @@ def delete_phone_num(db_conn, phone_num):
 def register_user(db_conn, name, password, phone_num):
     cur = db_conn.cursor()
     sql = """SELECT * FROM website_info WHERE UserName = %s;"""
-    param = (name)
+    param = (name,)
     cur.execute(sql, param)
     db_conn.commit()
     user_name = cur.fetchall()
     if len(user_name) != 0:
         return 'User already exists.'
     sql1 = """SELECT * FROM phone_number WHERE PhoneNum = %s;"""
-    param = (phone_num)
+    param = (phone_num,)
     cur.execute(sql1, param)
     db_conn.commit()
-    phone_num = cur.fetchall()
-    if len(phone_num) == 0:
+    list = cur.fetchall()
+    if len(list) == 0:
         return 'Phone number does not exist.'
     sql2 = """INSERT INTO website_info (UserName, Password, PhoneNum) VALUES (%s, %s, %s);"""
     param = (name, password, phone_num)
@@ -203,23 +207,29 @@ def login_by_phone_pin(db_conn, phone_num):
 def logout():
     return None, 'Logout succeed'
 
-def change_device(db_conn, tcp_conn, device_num, phone_num, password):
+def change_device(db_conn, tcp_conn, device_num, phone_num, password, curr_num):
     tcp_conns = Server.tcp_conns
     cur = db_conn.cursor()
-    sql = """SELECT * FROM phone_number WHERE PhoneNum = %s;"""
+    sql = """SELECT * FROM device_info WHERE PhoneNum = %s;"""
     param = (phone_num,)
     cur.execute(sql, param)
     db_conn.commit()
     list = cur.fetchall()
     if len(list) == 0:
-        return 'No such user.'
+        return curr_num, 'No such user.'
     origin_device = list[0][0]
+    print(f"origin_device: {origin_device}, device_num: {device_num}")
     if origin_device == device_num:
-        return 'Already in this device.'
+        return curr_num, 'Already in this device.'
     if origin_device in tcp_conns.keys():
         origin_tcp = tcp_conns[origin_device]
     else:
         origin_tcp = None
+    sql2 = """SELECT * FROM phone_number WHERE PhoneNum = %s;"""
+    param = (phone_num,)
+    cur.execute(sql2, param)
+    db_conn.commit()
+    list = cur.fetchall()
     print(f"password type: {type(password)}, value: {password}")
     print(f"stored password type: {type(list[0][2])}, value: {list[0][2]}")
     if password == str(list[0][2]):
@@ -233,23 +243,25 @@ def change_device(db_conn, tcp_conn, device_num, phone_num, password):
         param = (phone_num, device_num)
         cur.execute(sql3, param)
         db_conn.commit()
-        return 'Change device succeed.'
+        return phone_num,'Change device succeed.'
     else:
         tcp_conn.send(f'Please print the last two calls'.encode('UTF-8'))
         feedback = tcp_conn.recv(2048).decode().split(' ')
+        print(feedback)
         sql3 = """SELECT * FROM call_record WHERE caller = %s ORDER BY time DESC LIMIT 2;"""
-        param = (phone_num)
+        param = (phone_num,)
         cur.execute(sql3, param)
         db_conn.commit()
         call_record = cur.fetchall()
         if len(call_record) == 2:
-            if (call_record[0][1] == feedback[0] and call_record[1][1] == feedback[1]) or (call_record[0][1] == feedback[1] and call_record[1][1] == feedback[0]):
-                sql4 = """UPDATE DeviceNum SET PhoneNum = NULL WHERE DeviceNum = %s;
+            if (str(call_record[0][1]) == feedback[0] and str(call_record[1][1]) == feedback[1]) or (str(call_record[0][1]) == feedback[1] and str(call_record[1][1]) == feedback[0]):
+                sql4 = """UPDATE device_info SET PhoneNum = NULL WHERE DeviceNum = %s;
                 UPDATE device_info SET PhoneNum = %s WHERE DeviceNum = %s;"""
                 param = (origin_device, phone_num, device_num)
                 cur.execute(sql4, param)
                 db_conn.commit()
-                return 'Change device succeed.'
-    return 'Change device failed.'
+                return phone_num, 'Change device succeed.'
+    return curr_num, 'Change device failed.'
+
 
 
