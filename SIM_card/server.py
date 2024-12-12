@@ -22,6 +22,7 @@ cmd_phone = [
     'loginphonepin {phone_num} {pin}',
     'currentinfo',
     'call {phone_num}',
+    'dropphone',
     'exit'
 ]
 # def main_loop(socket_conn, db_conn, client_address, curr_device, curr_num, tcp_conns):
@@ -94,6 +95,9 @@ class Server(socketserver.BaseRequestHandler):
                         connect = False
                     elif receive_data == 'currentinfo':
                         feedback_data = f"Current device / number: {curr_device} / {curr_num}"
+                    elif receive_data == 'dropphone':
+                        feedback_data = drop_phone(db, curr_num)
+                        curr_num = None
                     else:
                         cmd = receive_data.split(' ')
                         if cmd[0] == 'register':

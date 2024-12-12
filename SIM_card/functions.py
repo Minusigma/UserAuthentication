@@ -263,5 +263,15 @@ def change_device(db_conn, tcp_conn, device_num, phone_num, password, curr_num):
                 return phone_num, 'Change device succeed.'
     return curr_num, 'Change device failed.'
 
-
+def drop_phone(db_conn, phone_num):
+    cur = db_conn.cursor()
+    sql = """UPDATE phone_number SET name = NULL, pin = NULL WHERE PhoneNum = %s;"""
+    param = (phone_num,)
+    cur.execute(sql, param)
+    db_conn.commit()
+    sql2 = """UPDATE device_info SET PhoneNum = NULL WHERE PhoneNum = %s;"""
+    param = (phone_num,)
+    cur.execute(sql2, param)
+    db_conn.commit()
+    return 'Drop phone number succeed.'
 
