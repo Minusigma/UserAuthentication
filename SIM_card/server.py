@@ -30,7 +30,7 @@ cmd_phone = [
 
 #     if not curr_num:
 #         if receive_data == '?' or receive_data == 'help' or receive_data == 'ls':
-#             feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_device)
+#             feedback_data = 'Available commands: \n\t' + '\n\t'.join(cmd_device)
 #         elif receive_data == 'exit':
 #             feedback_data = 'disconnected'
 #         else:
@@ -75,7 +75,7 @@ class Server(socketserver.BaseRequestHandler):
                         feedback_data = 'Please create a device first.'
                 elif not curr_num:
                     if receive_data == 'help' or receive_data == '?':
-                        feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_device)
+                        feedback_data = 'Available commands: \n\t' + '\n\t'.join(cmd_device)
                     elif receive_data == 'exit':
                         feedback_data = 'disconnected'
                         connect = False
@@ -89,7 +89,7 @@ class Server(socketserver.BaseRequestHandler):
                             curr_num,feedback_data = change_device(db, conn, curr_device, cmd[1], cmd[2], curr_num)
                 else:
                     if receive_data == 'help' or receive_data == '?':
-                        feedback_data = 'Available commends: \n\t' + '\n\t'.join(cmd_phone)
+                        feedback_data = 'Available commands: \n\t' + '\n\t'.join(cmd_phone)
                     elif receive_data == 'exit':
                         feedback_data = 'disconnected'
                         connect = False

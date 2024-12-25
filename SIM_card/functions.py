@@ -180,7 +180,7 @@ def login_by_phone_password(db_conn, phone_num, password):
         return 'Wrong password.'
     return 'Login succeed.'
 
-def login_by_phone_pin(db_conn, phone_num):
+def login_by_phone_pin(db_conn, tcp_conns, phone_num):
     cur = db_conn.cursor()
     sql = """SELECT * FROM website_info WHERE PhoneNum = %s;"""
     param = (phone_num,)
@@ -192,17 +192,17 @@ def login_by_phone_pin(db_conn, phone_num):
     name = list[0][0]
     pin = random.randint(1000, 9999)
     sql2 = """SELECT DeviceNum FROM device_info WHERE PhoneNum = %s;"""
-    param = (phone_num)
+    param = (phone_num,)
     cur.execute(sql2, param)
     db_conn.commit()
     device_num = cur.fetchall()[0][0]
-    if device_num in Server.tcp_conns:
-        tcp_conn = Server.tcp_conns[device_num]
+    if device_num in tcp_conns:
+        tcp_conn = tcp_conns[device_num]
         tcp_conn.send(f'pin {pin}'.encode())
     feedback = tcp_conn.recv(2048).decode()
-    if feedback == pin:
-        return name,'Login succeed.'
-    return None,'Wrong PIN.'
+    if str(feedback) == str(pin):
+        return 'Login succeed.'
+    return 'Wrong PIN.'
 
 def logout():
     return None, 'Logout succeed'
